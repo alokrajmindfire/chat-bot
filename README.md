@@ -4,8 +4,8 @@
 1. **Clone the repo:**
 
 ```bash
-git clone https://github.com/alokrajmindfire/backend-dam.git
-cd backend-dam
+git clone https://github.com/alokrajmindfire/chat-bot
+cd chat-bot
 ```
 
 2. **Install dependencies with Poetry:**
