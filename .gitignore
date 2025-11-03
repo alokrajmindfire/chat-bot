@@ -1,0 +1,68 @@
+# Python
+# Python cache files
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pkl
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pkl
+*.pyc
+*.pyo
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+__pycache__
+# Virtual environments
+venv/
+.env/
+env/
+ENV/
+.venv/
+venv.bak/
+
+# FastAPI / Uvicorn logs
+*.log
+
+# SQLite database files
+*.db
+*.sqlite3
+
+# Migrations (if using Alembic)
+alembic/versions/*.pyc
+alembic/__pycache__/
+
+# Byte-compiled / optimized files
+*.py[cod]
+__pycache__/
+
+# IDEs and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*.bak
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Testing and coverage
+.coverage
+.pytest_cache/
+htmlcov/
+.cache/
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+
+# Local configuration
+.env.local
+*.secret
+*.key

@@ -1,0 +1,30 @@
+[project]
+name = "chat-bot"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "alok-raj",email = "Alok.Raj@mindfiresolutions.com"}
+]
+readme = "README.md"
+requires-python = ">=3.13,<4.0.0"
+dependencies = [
+"google-genai (>=1.47.0,<2.0.0)",
+"langchain (>=1.0.3,<2.0.0)",
+"fastapi (>=0.121.0,<0.122.0)",
+"uvicorn (>=0.38.0,<0.39.0)",
+"python-dotenv (>=1.2.1,<2.0.0)"
+]
+
+[tool.poetry]
+package-mode = false
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+[tool.poe.tasks]
+dev = "uvicorn app.main:app --reload"
+[dependency-groups]
+dev = [
+    "poethepoet (>=0.37.0,<0.38.0)",
+    "uvicorn[standard] (>=0.38.0,<0.39.0)"
+]
