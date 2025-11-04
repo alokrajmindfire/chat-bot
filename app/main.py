@@ -27,6 +27,7 @@ app.add_middleware(
 )
 
 app.include_router(document_routes.router)
+app.include_router(query_routes.router)
 
 @app.get("/", tags=["root"])
 async def root():

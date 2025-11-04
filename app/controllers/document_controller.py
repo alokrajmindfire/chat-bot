@@ -23,7 +23,6 @@ class DocumentController:
     ) -> UploadResponse:
         """Process PDF and index in vector store"""
         
-        # Validate file type
         if not filename.lower().endswith('.pdf'):
             raise InvalidFileTypeError("Only PDF files are supported")
         

@@ -26,10 +26,10 @@ env/
 ENV/
 .venv/
 venv.bak/
-
+*.env
 # FastAPI / Uvicorn logs
 *.log
-
+*.bin
 # SQLite database files
 *.db
 *.sqlite3
@@ -41,7 +41,7 @@ alembic/__pycache__/
 # Byte-compiled / optimized files
 *.py[cod]
 __pycache__/
-
+*__pycache__/
 # IDEs and editors
 .vscode/
 .idea/
@@ -64,5 +64,6 @@ htmlcov/
 
 # Local configuration
 .env.local
+*.env.local
 *.secret
 *.key
