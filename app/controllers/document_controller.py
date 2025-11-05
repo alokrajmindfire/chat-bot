@@ -26,10 +26,8 @@ class DocumentController:
         if not filename.lower().endswith('.pdf'):
             raise InvalidFileTypeError("Only PDF files are supported")
         
-        # Load PDF
         documents = await self.pdf_service.load_pdf(file_content, filename)
         
-        # Chunk documents
         chunks = self.chunking_service.chunk_documents(
             documents,
             chunk_size=chunk_size or self.settings.CHUNK_SIZE,

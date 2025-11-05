@@ -2,6 +2,7 @@
 
 from pydantic_settings import BaseSettings
 from functools import lru_cache
+from typing import Optional
 
 class Settings(BaseSettings):
     APP_NAME: str = "RAG Pipeline API"
@@ -20,7 +21,10 @@ class Settings(BaseSettings):
     
     DEFAULT_TOP_K: int = 3
     MAX_TOP_K: int = 10
-    
+    REDIS_URL: Optional[str] = "redis://:admin12345@localhost:6379"
+    CHAT_MEMORY_BACKEND: str = "memory"
+    CHAT_MEMORY_TTL_SECONDS: Optional[int] = 60 * 60 * 24
+    CHAT_MEMORY_NAMESPACE: str = "chat_mem:"
     class Config:
         env_file = ".env"
         case_sensitive = True

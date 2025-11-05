@@ -19,7 +19,9 @@ async def query_documents(
         result = controller.query_documents(
             question=request.question,
             top_k=request.top_k,
-            collection_name=request.collection_name
+            collection_name=request.collection_name,
+            conversation_id=request.conversation_id,   # ✅ new
+            use_memory=request.use_memory  
         )
         return result
     

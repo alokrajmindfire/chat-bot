@@ -7,7 +7,8 @@ class QuestionRequest(BaseModel):
     question: str = Field(..., min_length=1, description="Question to ask")
     top_k: Optional[int] = Field(3, ge=1, le=10, description="Number of documents to retrieve")
     collection_name: Optional[str] = Field(None, description="Collection to query from")
-    
+    conversation_id: Optional[str] = None
+    use_memory: Optional[bool] = True  
     class Config:
         json_schema_extra = {
             "example": {
