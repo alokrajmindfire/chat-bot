@@ -14,14 +14,14 @@ class LLMService:
     def generate_answer(self, context: str, question: str) -> str:
         """Generate answer using Gemini"""
         try:
-            prompt = f"""Based on the following context, answer the question. If the answer is not in the context, say so clearly.
-
-Context:
-{context}
-
-Question: {question}
-
-Answer:"""
+            prompt = (
+                "You are a knowledgeable assistant. "
+                "Use the provided context to answer the question clearly and concisely. "
+                "If the answer is not found in the context, respond with "
+                "'The answer is not available in the provided context.'\n\n"
+                f"Context:\n{context}\n\n"
+                f"Question: {question}"
+            )
             
             response = self.client.generate_content(prompt)
             return response.text
