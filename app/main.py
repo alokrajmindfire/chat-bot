@@ -1,16 +1,19 @@
-from fastapi import FastAPI, Request
-from pydantic import BaseModel
-import os
-from google import genai
-from dotenv import load_dotenv
+"""FastAPI application entry point"""
+
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.routes import document_routes, query_routes
+from app.core.config import get_settings
+from app.models.response_models import HealthResponse
+from app.services.vector_store_service import VectorStoreService
 
-load_dotenv()
+settings = get_settings()
 
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
-
-app = FastAPI(title="Gemini Q&A API", version="1.0")
-
+app = FastAPI(
+    title=settings.APP_NAME,
+    version=settings.APP_VERSION,
+    description="Professional RAG Pipeline with LangChain and ChromaDB"
+)
 origins = [
     "http://localhost:8501",
     "http://127.0.0.1:8501",
@@ -22,20 +25,28 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-class QuestionRequest(BaseModel):
-    question: str
 
-@app.get("/")
-def root():
-    return {"message": "Welcome to chatbot!"}
+app.include_router(document_routes.router)
+app.include_router(query_routes.router)
 
-@app.post("/ask")
-async def ask_question(req: QuestionRequest):
-    try:
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=req.question
-        )
-        return {"answer": response.text}
-    except Exception as e:
-        return {"error": str(e)}
+@app.get("/", tags=["root"])
+async def root():
+    return {
+        "message": f"Welcome to {settings.APP_NAME}",
+        "version": settings.APP_VERSION,
+        "docs": "/docs"
+    }
+
+@app.get("/health", response_model=HealthResponse, tags=["health"])
+async def health_check():
+    """Health check endpoint"""
+    vector_store = VectorStoreService()
+    vector_store_status = "healthy" if vector_store.check_health() else "unhealthy"
+    
+    return HealthResponse(
+        status="healthy",
+        app_name=settings.APP_NAME,
+        version=settings.APP_VERSION,
+        vector_store_status=vector_store_status
+    )
+
