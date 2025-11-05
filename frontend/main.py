@@ -1,3 +1,8 @@
+"""
+Streamlit UI for RAG Pipeline
+Upload PDFs and Query with Gemini
+"""
+
 import streamlit as st
 import requests
 import time
@@ -7,163 +12,145 @@ UPLOAD_URL = f"{API_BASE_URL}/documents/upload"
 QUERY_URL = f"{API_BASE_URL}/query/"
 HEALTH_URL = f"{API_BASE_URL}/health"
 
-st.set_page_config(
-    page_title="📚 RAG PDF Q&A with Gemini",
-    page_icon="📚",
-    layout="centered",
-)
+st.set_page_config(page_title="Gemini RAG Chat", page_icon="A", layout="wide")
 
 st.markdown("""
 <style>
-h1, h2, h3 {
-    color: #1f77b4;
-}
-.block-container {
-    max-width: 900px;
-    margin: auto;
-}
-.upload-box, .qa-box {
-    background-color: #f9f9fb;
-    border: 2px solid #e0e0e0;
-    border-radius: 12px;
-    padding: 2rem;
-    box-shadow: 0px 2px 6px rgba(0,0,0,0.05);
+.chat-container {
+    background-color: #0e1117;
+    padding: 1rem;
+    border-radius: 10px;
 }
 .answer-box {
-    background-color: #1b282d;
-    padding: 1.5rem;
-    border-left: 6px solid #1f77b4;
-    border-radius: 8px;
-    margin-top: 1rem;
-}
-.source-box {
-    background-color: #f6f6f6;
-    padding: 1rem;
-    border-radius: 8px;
-    border-left: 4px solid #1f77b4;
+    background-color: #1b1d35;
+    padding: 0.8rem;
+    border-radius: 10px;
     margin-top: 0.5rem;
 }
-.footer {
-    text-align: center;
-    color: #999;
-    margin-top: 3rem;
+.user-box {
+    background-color: #0f1128;
+    padding: 0.8rem;
+    border-radius: 10px;
+    margin-top: 0.5rem;
+}
+.source-expander {
+    margin-top: 10px;
 }
 </style>
 """, unsafe_allow_html=True)
 
-if 'uploaded_docs' not in st.session_state:
-    st.session_state.uploaded_docs = []
-if 'query_history' not in st.session_state:
-    st.session_state.query_history = []
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
 
-st.title("📚 RAG PDF Q&A")
-st.caption("Upload a PDF and ask questions powered by **Google Gemini 2.5 Flash**")
+if "conversation_id" not in st.session_state:
+    st.session_state.conversation_id = str(int(time.time()))
 
-def check_backend_health():
-    try:
-        health = requests.get(HEALTH_URL, timeout=10)
-        if health.status_code == 200:
-            return True, health.json()
-        else:
-            return False, {}
-    except Exception:
-        return False, {}
+if "query_input" not in st.session_state:
+    st.session_state.query_input = ""
 
-is_alive, health_status = check_backend_health()
+st.sidebar.title("📂 Document Upload")
 
-if is_alive:
-    st.success("✅ Backend Connected")
-    st.caption(f"Vector Store: {health_status.get('vector_store_status', 'OK')}")
-else:
-    st.error("⚠️ Could not connect to the API backend.")
-    if st.button("🔄 Reload"):
-        st.rerun()
-    st.stop()
-
-tab1, tab2 = st.tabs(["📤 Upload PDF", "💬 Q&A"])
-
-with tab1:
-    st.markdown("### Upload and Index a PDF Document")
-    with st.form("upload_form"):
-        uploaded_file = st.file_uploader(
-            "Choose a PDF to upload and index",
-            type=["pdf"],
-            help="Upload a document to be indexed in the vector database",
-        )
-        submit_btn = st.form_submit_button("Upload & Index")
-
-        if submit_btn:
-            if not uploaded_file:
-                st.warning("Please upload a PDF first.")
+uploaded_file = st.sidebar.file_uploader("Upload PDF", type=["pdf"])
+if uploaded_file is not None:
+    with st.spinner("📄 Uploading & Processing PDF..."):
+        files = {"file": (uploaded_file.name, uploaded_file, "application/pdf")}
+        try:
+            resp = requests.post(UPLOAD_URL, files=files)
+            if resp.status_code == 200:
+                st.sidebar.success("✅ PDF uploaded successfully!")
             else:
-                with st.spinner("Processing PDF and creating embeddings..."):
-                    try:
-                        files = {'file': (uploaded_file.name, uploaded_file.getvalue(), 'application/pdf')}
-                        resp = requests.post(UPLOAD_URL, files=files, timeout=60)
-                        if resp.status_code == 200:
-                            data = resp.json()
-                            st.success("✅ Uploaded & Indexed Successfully!")
-                            st.markdown(f"""
-                                **Filename:** {data['filename']}  
-                                **Chunks Created:** {data['chunks_created']}  
-                                **Collection:** {data['collection_name']}
-                            """)
-                            st.session_state.uploaded_docs.append(data['filename'])
-                        else:
-                            st.error(f"Upload failed: {resp.json().get('detail', 'Unknown error')}")
-                    except Exception as e:
-                        st.error(f"🚨 Connection Error: {e}")
+                st.sidebar.error(f"❌ Upload failed: {resp.text}")
+        except Exception as e:
+            st.sidebar.error(f"🚨 Error: {e}")
 
-with tab2:
-    if not st.session_state.uploaded_docs:
-        st.warning("Please upload a PDF first in the **Upload PDF** tab.")
+st.sidebar.markdown("---")
+top_k = st.sidebar.slider("🔍 Top K Results", 1, 10, 3)
+st.sidebar.markdown("Adjust retrieval depth")
+
+st.title("🤖 Gemini RAG Chatbot")
+st.markdown("Ask any question based on your uploaded PDFs.")
+
+question = st.text_input(
+    "💬 Your Question:",
+    value=st.session_state.query_input,
+    placeholder="e.g., What is AI?",
+    key="query_input_box"
+)
+
+ask_btn = st.button("🚀 Send")
+
+if ask_btn:
+    if not question.strip():
+        st.warning("⚠️ Please enter a question.")
     else:
-        st.markdown("### Ask Questions About Your Document")
-        question = st.text_area(
-            "Enter your question:",
-            placeholder="Example: What is the main idea of this document?",
-            height=120
-        )
-        top_k = st.slider("Number of sources to retrieve", 1, 10, 3)
-        ask_btn = st.button("🤖 Ask Gemini", use_container_width=True)
-        show_sources = st.checkbox("Show sources", value=True)
+        st.session_state.chat_history.append({"role": "user", "text": question})
 
-        if ask_btn:
-            if not question.strip():
-                st.warning("⚠️ Please enter a question.")
+        st.session_state.query_input = ""
+        st.rerun()
+
+if st.session_state.chat_history and (
+    len(st.session_state.chat_history) == 1 or
+    st.session_state.chat_history[-1]["role"] == "user"
+):
+    latest_question = st.session_state.chat_history[-1]["text"]
+
+    with st.container():
+        st.markdown(f"<div class='user-box'>👤 <b>You:</b> {latest_question}</div>", unsafe_allow_html=True)
+        answer_placeholder = st.empty()
+
+    with st.spinner("🤖 Gemini is thinking..."):
+        try:
+            payload = {
+                "question": latest_question,
+                "top_k": top_k,
+                "conversation_id": st.session_state.conversation_id,
+                "use_memory": True,
+            }
+            resp = requests.post(QUERY_URL, json=payload, timeout=120)
+
+            if resp.status_code == 200:
+                data = resp.json()
+                answer = data.get("answer", "No answer generated.")
+                sources = data.get("sources", [])
+
+                st.session_state.chat_history.append(
+                    {"role": "assistant", "text": answer, "sources": sources}
+                )
+
+                answer_placeholder.markdown(
+                    f"<div class='answer-box'>🤖 <b>Gemini:</b> {answer}</div>",
+                    unsafe_allow_html=True,
+                )
+
+                if sources:
+                    st.markdown("<div class='source-expander'></div>", unsafe_allow_html=True)
+                    with st.expander("📘 View Sources"):
+                        for i, src in enumerate(sources, start=1):
+                            st.markdown(f"**Source {i}:** {src}")
+
             else:
-                with st.spinner("Generating answer..."):
-                    try:
-                        payload = {"question": question, "top_k": top_k}
-                        resp = requests.post(QUERY_URL, json=payload, timeout=60)
-                        if resp.status_code == 200:
-                            data = resp.json()
-                            answer = data.get("answer", "No answer generated.")
-                            st.markdown("#### 💡 Gemini’s Answer")
-                            st.markdown(f"<div class='answer-box'>{answer}</div>", unsafe_allow_html=True)
+                detail = resp.json().get("detail", "Unknown error")
+                answer_placeholder.markdown(
+                    f"<div class='answer-box'>❌ Query failed: {detail}</div>",
+                    unsafe_allow_html=True,
+                )
 
-                            if show_sources and data.get("sources"):
-                                st.markdown("#### 📑 Sources")
-                                for idx, src in enumerate(data["sources"], 1):
-                                    with st.expander(f"Source {idx}: {src['metadata'].get('filename', 'Unknown')}"):
-                                        st.write(src["content"])
-                                        st.caption(f"Metadata: {src['metadata']}")
-                            
-                            st.caption(f"🤖 Model Used: {data.get('model_used', 'Gemini 2.5 Flash')}")
-                            st.session_state.query_history.append({
-                                "question": question,
-                                "answer": answer,
-                                "time": time.strftime('%Y-%m-%d %H:%M:%S')
-                            })
-                        else:
-                            st.error(f"Query failed: {resp.json().get('detail', 'Unknown error')}")
-                    except Exception as e:
-                        st.error(f"🚨 Connection Error: {e}")
+        except Exception as e:
+            answer_placeholder.markdown(
+                f"<div class='answer-box'>🚨 Connection Error: {e}</div>",
+                unsafe_allow_html=True,
+            )
 
-    if st.session_state.query_history:
-        st.markdown("---")
-        st.markdown("### 📜 Recent Queries")
-        for q in reversed(st.session_state.query_history[-3:]):
-            with st.expander(f"Q: {q['question'][:80]}..."):
-                st.markdown(f"**Time:** {q['time']}")
-                st.markdown(f"**Answer:** {q['answer']}")
+if st.session_state.chat_history:
+    st.markdown("---")
+    with st.container():
+        for i, entry in enumerate(st.session_state.chat_history[:-2]):
+            if entry["role"] == "user":
+                st.markdown(f"<div class='user-box'>👤 <b>You:</b> {entry['text']}</div>", unsafe_allow_html=True)
+            else:
+                st.markdown(f"<div class='answer-box'>🤖 <b>Gemini:</b> {entry['text']}</div>", unsafe_allow_html=True)
+                if "sources" in entry and entry["sources"]:
+                    st.markdown("<div class='source-expander'></div>", unsafe_allow_html=True)
+                    with st.expander("📘 View Sources", expanded=False):
+                        for i, src in enumerate(entry["sources"], start=1):
+                            st.markdown(f"**Source {i}:** {src}")
