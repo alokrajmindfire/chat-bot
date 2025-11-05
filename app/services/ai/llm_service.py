@@ -3,6 +3,8 @@ import google.generativeai as genai
 from app.core.config import get_settings
 from app.core.exceptions import LLMError
 from typing import List, Dict, Optional
+from app.services.tools.weather_tool import WeatherTool
+import re
 
 class LLMService:
     def __init__(self):
@@ -10,7 +12,17 @@ class LLMService:
         genai.configure(api_key=settings.GEMINI_API_KEY)
         self.model_name = settings.GEMINI_MODEL
         self.client = genai.GenerativeModel(self.model_name)
-
+        self.weather_tool = WeatherTool()
+    
+    def _detect_weather_intent(self, question: str) -> Optional[str]:
+        """Check if user is asking about weather."""
+        q = question.lower()
+        if re.search(r"\b(weather|temperature|forecast|climate)\b", q):
+            match = re.search(r"in\s+([A-Za-z\s]+)", q)
+            if match:
+                return match.group(1).strip()
+        return None
+    
     def _build_prompt(self, context: str, question: str, conversation_history: Optional[List[Dict]] = None) -> str:
         history_text = ""
         if conversation_history:
@@ -30,16 +42,16 @@ class LLMService:
         # "Avoid speculation and keep your response factual and well-structured.\n\n"
         # )
         prompt = (
-    "You are a highly knowledgeable and articulate assistant with expertise in reasoning, explanation, and synthesis. "
-    "Provide a detailed, well-structured, and comprehensive answer that deeply explores the question. "
-    "Use the information in the provided context as your primary source of truth. "
-    "Integrate relevant background knowledge only if the context is incomplete or unclear, ensuring accuracy and consistency. "
-    "Your response should be clear, natural, and written as if you are directly explaining to the user. "
-    "Go beyond surface-level information — include explanations, underlying principles, examples, and implications where appropriate. "
-    "Avoid speculation or unrelated content. "
-    "If the question involves a process or concept, break it down step-by-step. "
-    "Keep the tone confident, informative, and easy to follow.\n\n"
-)
+            "You are a highly knowledgeable and articulate assistant with expertise in reasoning, explanation, and synthesis. "
+            "Provide a detailed, well-structured, and comprehensive answer that deeply explores the question. "
+            "Use the information in the provided context as your primary source of truth. "
+            "Integrate relevant background knowledge only if the context is incomplete or unclear, ensuring accuracy and consistency. "
+            "Your response should be clear, natural, and written as if you are directly explaining to the user. "
+            "Go beyond surface-level information — include explanations, underlying principles, examples, and implications where appropriate. "
+            "Avoid speculation or unrelated content. "
+            "If the question involves a process or concept, break it down step-by-step. "
+            "Keep the tone confident, informative, and easy to follow.\n\n"
+        )
         if history_text:
             prompt += f"Conversation history:\n{history_text}\n\n"
 
@@ -54,6 +66,9 @@ class LLMService:
     ) -> str:
         """Generate answer using Gemini"""
         try:
+            city = self._detect_weather_intent(question)
+            if city:
+                return self.weather_tool.get_weather(city)
             prompt = self._build_prompt(context, question, conversation_history)
             # Use the correct method for your genai client. This is a general example.
             response = self.client.generate_content(prompt)

@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     DEBUG: bool = True
     
     GEMINI_API_KEY: str
+    OPENWEATHER_API_KEY: str
     GEMINI_MODEL: str = "gemini-2.0-flash-exp"
     EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"
     
