@@ -1,46 +1,66 @@
-# app/services/ai/llm_service.py
-import google.generativeai as genai
-from app.core.config import get_settings
-from app.core.exceptions import LLMError
 from typing import List, Dict, Optional
+
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain.tools import tool
+from langchain import hub
+
 from app.services.tools.weather_tool import WeatherTool
-import re
+from app.core.exceptions import LLMError
+from app.core.config import get_settings
+
 
 class LLMService:
     def __init__(self):
         settings = get_settings()
-        genai.configure(api_key=settings.GEMINI_API_KEY)
-        self.model_name = settings.GEMINI_MODEL
-        self.client = genai.GenerativeModel(self.model_name)
-        self.weather_tool = WeatherTool()
-    
-    def _detect_weather_intent(self, question: str) -> Optional[str]:
-        """Check if user is asking about weather."""
-        q = question.lower()
-        if re.search(r"\b(weather|temperature|forecast|climate)\b", q):
-            match = re.search(r"in\s+([A-Za-z\s]+)", q)
-            if match:
-                return match.group(1).strip()
-        return None
-    
-    def _build_prompt(self, context: str, question: str, conversation_history: Optional[List[Dict]] = None) -> str:
+
+        self.llm = ChatGoogleGenerativeAI(
+            model=settings.GEMINI_MODEL,
+            google_api_key=settings.GEMINI_API_KEY,
+            temperature=0.7,
+        )
+
+        self.tools = self._create_tools()
+        
+        self.llm_with_tools = self.llm.bind_tools(self.tools)
+
+    def _create_tools(self) -> List:
+        """Create and return list of tools for the agent."""
+        weather_tool_service = WeatherTool()
+
+        @tool("get_weather")
+        def get_weather(city: str) -> str:
+            """Get real-time weather information for a given city.
+            
+            Args:
+                city: Name of the city to get weather for
+            
+            Returns:
+                Weather information as a string
+            """
+            print("city",city)
+            try:
+                return weather_tool_service.get_weather(city)
+            except Exception as e:
+                return f"Error fetching weather for {city}: {str(e)}"
+
+        return [get_weather]
+
+    def _build_prompt(
+        self,
+        context: str,
+        question: str,
+        conversation_history: Optional[List[Dict]] = None
+    ) -> str:
+        """Combine context and history into a single natural-language prompt."""
         history_text = ""
         if conversation_history:
-            history_parts = []
-            for m in conversation_history[-10:]:
-                role = m.get("role", "user")
-                text = m.get("text", "")
-                history_parts.append(f"{role.upper()}: {text}")
-            history_text = "\n\n".join(history_parts)
+            parts = []
+            for msg in conversation_history[-10:]:
+                role = msg.get("role", "user")
+                text = msg.get("text", "")
+                parts.append(f"{role.upper()}: {text}")
+            history_text = "\n\n".join(parts)
 
-        # prompt = (
-        # "You are a knowledgeable and articulate assistant. "
-        # "Answer the question clearly, naturally, and comprehensively — as if you are explaining directly to the user. "
-        # "Do not mention that the answer is based on any provided text or context. "
-        # "Use the information in the context below as your primary source of truth. "
-        # "Only if the context is missing or clearly incomplete, you may use your own understanding to give a helpful and accurate answer. "
-        # "Avoid speculation and keep your response factual and well-structured.\n\n"
-        # )
         prompt = (
             "You are a highly knowledgeable and articulate assistant with expertise in reasoning, explanation, and synthesis. "
             "Provide a detailed, well-structured, and comprehensive answer that deeply explores the question. "
@@ -49,9 +69,11 @@ class LLMService:
             "Your response should be clear, natural, and written as if you are directly explaining to the user. "
             "Go beyond surface-level information — include explanations, underlying principles, examples, and implications where appropriate. "
             "Avoid speculation or unrelated content. "
+            "If a question involves real-time information like current weather, call the appropriate tool. "
             "If the question involves a process or concept, break it down step-by-step. "
             "Keep the tone confident, informative, and easy to follow.\n\n"
         )
+
         if history_text:
             prompt += f"Conversation history:\n{history_text}\n\n"
 
@@ -64,15 +86,25 @@ class LLMService:
         question: str,
         conversation_history: Optional[List[Dict]] = None
     ) -> str:
-        """Generate answer using Gemini"""
+        """Generate an answer using Gemini with tool support."""
         try:
-            city = self._detect_weather_intent(question)
-            if city:
-                return self.weather_tool.get_weather(city)
             prompt = self._build_prompt(context, question, conversation_history)
-            # Use the correct method for your genai client. This is a general example.
-            response = self.client.generate_content(prompt)
-            # response.text or response.candidates[0].content depending on lib
-            return getattr(response, "text", None) or str(response)
+            response = self.llm_with_tools.invoke(prompt)
+            print("response",response)
+            if hasattr(response, 'tool_calls') and response.tool_calls:
+                tool_results = []
+                for tool_call in response.tool_calls:
+                    tool_name = tool_call['name']
+                    tool_args = tool_call['args']
+                    
+                    for tool in self.tools:
+                        if tool.name == tool_name:
+                            result = tool.invoke(tool_args)
+                            tool_results.append(result)
+                            break
+                
+                return tool_results[0] if tool_results else response.content
+            
+            return response.content
         except Exception as e:
             raise LLMError(f"Error generating answer: {str(e)}")

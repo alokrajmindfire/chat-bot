@@ -56,9 +56,7 @@ class InMemoryChatMemory(BaseChatMemory):
 class RedisChatMemory(BaseChatMemory):
     """
     Redis-backed chat memory.
-
     Uses a Redis list per conversation key. Values are JSON strings.
-    Requires: redis.asyncio (redis-py >= 4.x) installed.
     """
 
     def __init__(self, redis_url: str, ttl_seconds: Optional[int] = None, namespace: str = "chat_mem:"):

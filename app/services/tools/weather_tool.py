@@ -1,5 +1,3 @@
-# app/services/ai/tools/weather_tool.py
-
 import requests
 from datetime import datetime
 from app.core.config import get_settings

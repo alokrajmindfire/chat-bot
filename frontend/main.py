@@ -1,8 +1,3 @@
-"""
-Streamlit UI for RAG Pipeline
-Upload PDFs and Query with Gemini
-"""
-
 import streamlit as st
 import requests
 import time
@@ -48,20 +43,28 @@ if "conversation_id" not in st.session_state:
 if "query_input" not in st.session_state:
     st.session_state.query_input = ""
 
+if "pdf_uploaded" not in st.session_state:
+    st.session_state.pdf_uploaded = False
+
 st.sidebar.title("📂 Document Upload")
 
 uploaded_file = st.sidebar.file_uploader("Upload PDF", type=["pdf"])
-if uploaded_file is not None:
+
+if uploaded_file and not st.session_state.pdf_uploaded:
     with st.spinner("📄 Uploading & Processing PDF..."):
         files = {"file": (uploaded_file.name, uploaded_file, "application/pdf")}
         try:
             resp = requests.post(UPLOAD_URL, files=files)
             if resp.status_code == 200:
                 st.sidebar.success("✅ PDF uploaded successfully!")
+                st.session_state.pdf_uploaded = True
             else:
                 st.sidebar.error(f"❌ Upload failed: {resp.text}")
         except Exception as e:
             st.sidebar.error(f"🚨 Error: {e}")
+
+if st.session_state.pdf_uploaded:
+    st.sidebar.info("📄 PDF already uploaded. You can now chat!")
 
 st.sidebar.markdown("---")
 top_k = st.sidebar.slider("🔍 Top K Results", 1, 10, 3)
@@ -80,11 +83,12 @@ question = st.text_input(
 ask_btn = st.button("🚀 Send")
 
 if ask_btn:
-    if not question.strip():
+    if not st.session_state.pdf_uploaded:
+        st.warning("⚠️ Please upload a PDF first.")
+    elif not question.strip():
         st.warning("⚠️ Please enter a question.")
     else:
         st.session_state.chat_history.append({"role": "user", "text": question})
-
         st.session_state.query_input = ""
         st.rerun()
 
@@ -144,13 +148,12 @@ if st.session_state.chat_history and (
 if st.session_state.chat_history:
     st.markdown("---")
     with st.container():
-        for i, entry in enumerate(st.session_state.chat_history[:-2]):
+        for entry in st.session_state.chat_history[:-2]:
             if entry["role"] == "user":
                 st.markdown(f"<div class='user-box'>👤 <b>You:</b> {entry['text']}</div>", unsafe_allow_html=True)
             else:
                 st.markdown(f"<div class='answer-box'>🤖 <b>Gemini:</b> {entry['text']}</div>", unsafe_allow_html=True)
                 if "sources" in entry and entry["sources"]:
-                    st.markdown("<div class='source-expander'></div>", unsafe_allow_html=True)
                     with st.expander("📘 View Sources", expanded=False):
                         for i, src in enumerate(entry["sources"], start=1):
                             st.markdown(f"**Source {i}:** {src}")
