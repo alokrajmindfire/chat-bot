@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str
     OPENWEATHER_API_KEY: str
     LANGSMITH_API_KEY: str
+    RAPIDAPI_KEY: str
     GEMINI_MODEL: str = "gemini-2.0-flash-exp"
     EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"
     
