@@ -46,24 +46,27 @@ class QueryController:
         if use_memory and conversation_id and self.memory:
             conv_history = await self.memory.get_messages(conversation_id)
 
-        answer = self.llm_service.generate_answer(
+        result = self.llm_service.generate_answer(
             context=context,
             question=question,
             conversation_history=conv_history,
         )
-
+        answer = result["output"]
+        used_tool = result["used_tool"]
         if use_memory and conversation_id and self.memory:
             await self.memory.append_message(conversation_id, "user", question)
             await self.memory.append_message(conversation_id, "assistant", answer)
-
-        sources = [
-            SourceDocument(
-                content=doc.page_content[:300] + "...",
-                metadata=doc.metadata,
-                score=0.0,
-            )
-            for doc in docs
-        ]
+        
+        sources = []
+        if not used_tool:
+            sources = [
+                SourceDocument(
+                    content=doc.page_content[:300] + "...",
+                    metadata=doc.metadata,
+                    score=0.0,
+                )
+                for doc in docs
+            ]
 
         return QueryResponse(
             question=question,

@@ -1,6 +1,7 @@
+from typing import List, Dict, Optional
+from langchain_community.tools import DuckDuckGoSearchResults
 from langchain_classic.agents import AgentExecutor, create_react_agent
 from langsmith import Client
-from typing import List, Dict, Optional
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_community.tools import Tool
 from langchain.tools import tool
@@ -8,8 +9,10 @@ from app.core.config import get_settings
 from app.services.tools.weather_tool import WeatherTool
 from app.core.exceptions import LLMError
 from app.services.tools.news_tool import NewsTool
-
+import ddgs
 class LLMService:
+    """LLMService manages all interactions with the underlying Large Language Model (Gemini)
+    and coordinates with LangChain tools and agent execution"""
     def __init__(self):
         settings = get_settings()
         client = Client(api_key=settings.LANGSMITH_API_KEY)
@@ -49,8 +52,20 @@ class LLMService:
                     return news_service.get_news(category)
                 except Exception as e:
                     return f"Error fetching news for {category}: {str(e)}"
+        
+        @tool("search_web", return_direct=False)
+        def search_web(query: str) -> str:
+            """Search the web for up-to-date information using DuckDuckGo."""
+            try:
+                search = DuckDuckGoSearchResults()
+                result = search.run(query)
+                print("result",result)
 
-        return [get_weather, get_news]
+                return result
+            except Exception as e:
+                return f"Error: {str(e)}"
+
+        return [get_weather, get_news, search_web]
     
     def generate_answer(
         self,
@@ -68,16 +83,14 @@ class LLMService:
                     history.append(f"{role.capitalize()}: {text}")
 
             system_prompt = (
-            "You are a highly knowledgeable and articulate assistant with expertise in reasoning, explanation, and synthesis. "
-            "Provide a detailed, well-structured, and comprehensive answer that deeply explores the question. "
-            "Use the information in the provided context as your primary source of truth. "
-            "Integrate relevant background knowledge only if the context is incomplete or unclear, ensuring accuracy and consistency. "
-            "Your response should be clear, natural, and written as if you are directly explaining to the user. "
-            "Go beyond surface-level information — include explanations, underlying principles, examples, and implications where appropriate. "
-            "Avoid speculation or unrelated content. "
-            "If a question involves real-time information like current weather, call the appropriate tool. "
-            "If the question involves a process or concept, break it down step-by-step. "
-            "Keep the tone confident, informative, and easy to follow.\n\n"
+                "You are an intelligent, articulate, and reliable assistant. "
+                "Your responses should be thoughtful, precise, and naturally written. "
+                "Rely on the provided context first; if something is unclear, reason carefully or use a tool when available. "
+                "Be confident but not verbose — aim for clarity and depth. "
+                "When relevant, include brief insights or examples that make your answer more useful or intuitive. "
+                "Avoid speculation, filler phrases, or unnecessary repetition. "
+                "If the question involves real-time topics like weather or news, use the appropriate tool. "
+                "Always respond in a natural, conversational tone while maintaining professional quality.\n\n"
             )
 
             user_prompt = (
@@ -88,8 +101,13 @@ class LLMService:
             )
 
             result = self.agent_executor.invoke({"input": user_prompt})
-            print("asad",result)
-            return result.get("output", "").strip() or "No response."
+            print("response agent",result)
+            output = result.get("output", "").strip() or "No response."
+            used_tool = False
+            if isinstance(result, dict) and "intermediate_steps" in result:
+                used_tool = any("tool" in str(step).lower() for step in result["intermediate_steps"])
+            
+            return {"output": output, "used_tool": used_tool}
 
         except Exception as e:
             raise LLMError(f"Error generating answer: {str(e)}")

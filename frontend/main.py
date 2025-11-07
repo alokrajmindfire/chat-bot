@@ -73,12 +73,23 @@ st.sidebar.markdown("Adjust retrieval depth")
 
 st.title("🤖 Gemini RAG Chatbot")
 st.markdown("Ask any question. If you've uploaded a PDF, responses will use its context — otherwise, Gemini will answer generally.")
-
-question = st.text_input(
+placeholder_text = (
+    "👋 Hi! I’m your Gemini Assistant.\n"
+    "You can ask me questions about your uploaded PDFs or general topics.\n\n"
+    "I currently support tools like:\n"
+    "• Document Q&A — Ask questions about uploaded PDFs.\n"
+    "• Weather — Get current weather by city (e.g., “What's the weather in Delhi?”).\n"
+    "• News — Fetch latest news headlines (e.g., “Show me today’s tech news”).\n"
+    "• Web Search — Look up real-time information via DuckDuckGo.\n"
+    "• Conversation memory for context\n\n"
+    "Try asking: “Summarize the uploaded document” or “What’s the latest AI news?”"
+)
+question = st.text_area(
     "💬 Your Question:",
     value=st.session_state.query_input,
-    placeholder="e.g., What is AI?",
-    key="query_input_box"
+    placeholder=placeholder_text,
+    key="query_input_box",
+    height=310
 )
 
 ask_btn = st.button("🚀 Send")
@@ -153,6 +164,7 @@ if st.session_state.chat_history:
             else:
                 st.markdown(f"<div class='answer-box'>🤖 <b>Gemini:</b> {entry['text']}</div>", unsafe_allow_html=True)
                 if "sources" in entry and entry["sources"]:
+                    st.markdown("<div class='source-expander'></div>", unsafe_allow_html=True)
                     with st.expander("📘 View Sources", expanded=False):
                         for i, src in enumerate(entry["sources"], start=1):
                             st.markdown(f"**Source {i}:** {src}")
