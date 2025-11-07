@@ -6,6 +6,4 @@ services:
     container_name: chatbot-redis
     ports:
       - "6379:6379"
-    environment:
-      - REDIS_PASSWORD=admin12345
 

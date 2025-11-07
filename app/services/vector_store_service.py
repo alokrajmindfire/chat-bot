@@ -36,7 +36,6 @@ class VectorStoreService:
             vectorstore = self.get_or_create_vectorstore(collection_name)
             
             if vectorstore._collection.count() == 0:
-                # Create new vector store
                 self._vectorstore = Chroma.from_documents(
                     documents=documents,
                     embedding=self.embeddings,
