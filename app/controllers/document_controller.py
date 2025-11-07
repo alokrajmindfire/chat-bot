@@ -34,7 +34,6 @@ class DocumentController:
             chunk_overlap=chunk_overlap or self.settings.CHUNK_OVERLAP
         )
         
-        # Index in vector store
         self.vector_store_service.add_documents(chunks)
         
         return UploadResponse(
