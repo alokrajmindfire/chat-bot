@@ -7,6 +7,7 @@ from langchain.tools import tool
 from app.core.config import get_settings
 from app.services.tools.weather_tool import WeatherTool
 from app.core.exceptions import LLMError
+from app.services.tools.news_tool import NewsTool
 
 class LLMService:
     def __init__(self):
@@ -31,6 +32,7 @@ class LLMService:
     def _create_tools(self) -> List[Tool]:
         """Create and return a list of tools for the agent."""
         weather_service = WeatherTool()
+        news_service = NewsTool()
 
         @tool("get_weather", return_direct=False)
         def get_weather(city: str) -> str:
@@ -39,9 +41,17 @@ class LLMService:
                 return weather_service.get_weather(city)
             except Exception as e:
                 return f"Error fetching weather for {city}: {str(e)}"
+    
+        @tool("get_news", return_direct=False)
+        def get_news(category: str = "business") -> str:
+                """Fetch the latest news for a given category (e.g. business, sports, technology)."""
+                try:
+                    return news_service.get_news(category)
+                except Exception as e:
+                    return f"Error fetching news for {category}: {str(e)}"
 
-        return [get_weather]
-
+        return [get_weather, get_news]
+    
     def generate_answer(
         self,
         context: str,
