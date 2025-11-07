@@ -47,7 +47,6 @@ if "pdf_uploaded" not in st.session_state:
     st.session_state.pdf_uploaded = False
 
 st.sidebar.title("📂 Document Upload")
-
 uploaded_file = st.sidebar.file_uploader("Upload PDF", type=["pdf"])
 
 if uploaded_file and not st.session_state.pdf_uploaded:
@@ -64,14 +63,16 @@ if uploaded_file and not st.session_state.pdf_uploaded:
             st.sidebar.error(f"🚨 Error: {e}")
 
 if st.session_state.pdf_uploaded:
-    st.sidebar.info("📄 PDF already uploaded. You can now chat!")
+    st.sidebar.info("📄 PDF uploaded successfully. You can chat with document context.")
+else:
+    st.sidebar.info("💬 No PDF uploaded. Chat will use general knowledge only.")
 
 st.sidebar.markdown("---")
-top_k = st.sidebar.slider("🔍 Top K Results", 1, 10, 3)
+top_k = st.sidebar.slider("🔍 Top K Results", 1, 10, 1)
 st.sidebar.markdown("Adjust retrieval depth")
 
 st.title("🤖 Gemini RAG Chatbot")
-st.markdown("Ask any question based on your uploaded PDFs.")
+st.markdown("Ask any question. If you've uploaded a PDF, responses will use its context — otherwise, Gemini will answer generally.")
 
 question = st.text_input(
     "💬 Your Question:",
@@ -83,9 +84,7 @@ question = st.text_input(
 ask_btn = st.button("🚀 Send")
 
 if ask_btn:
-    if not st.session_state.pdf_uploaded:
-        st.warning("⚠️ Please upload a PDF first.")
-    elif not question.strip():
+    if not question.strip():
         st.warning("⚠️ Please enter a question.")
     else:
         st.session_state.chat_history.append({"role": "user", "text": question})

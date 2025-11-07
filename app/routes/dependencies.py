@@ -1,9 +1,10 @@
 """Shared API dependencies"""
 
+from fastapi import Depends
 from app.controllers.document_controller import DocumentController
 from app.controllers.query_controller import QueryController
 from app.core.config import get_settings
-from app.services.chat_memory_service import InMemoryChatMemory, RedisChatMemory, BaseChatMemory
+from app.services.chat_memory_service import RedisChatMemory, BaseChatMemory
 
 _memory_instance: BaseChatMemory = None
 
@@ -17,21 +18,19 @@ def get_chat_memory() -> BaseChatMemory:
         return _memory_instance
 
     settings = get_settings()
-    backend = getattr(settings, "CHAT_MEMORY_BACKEND", "memory")
+    if not getattr(settings, "REDIS_URL", None):
+        raise RuntimeError("REDIS_URL is required for RedisChatMemory")
 
-    if backend == "redis" and getattr(settings, "REDIS_URL", None):
-        _memory_instance = RedisChatMemory(
-            redis_url=settings.REDIS_URL,
-            ttl_seconds=getattr(settings, "CHAT_MEMORY_TTL_SECONDS", None),
-            namespace=getattr(settings, "CHAT_MEMORY_NAMESPACE", "chat_mem:")
-        )
-    else:
-        _memory_instance = InMemoryChatMemory()
-
+    _memory_instance = RedisChatMemory(
+        redis_url=settings.REDIS_URL,
+        ttl_seconds=getattr(settings, "CHAT_MEMORY_TTL_SECONDS", 86400),
+        namespace=getattr(settings, "CHAT_MEMORY_NAMESPACE", "chat_mem:")
+    )
     return _memory_instance
 
 def get_document_controller() -> DocumentController:
     return DocumentController()
 
-def get_query_controller() -> QueryController:
-    return QueryController()
+def get_query_controller(memory_service: BaseChatMemory = Depends(get_chat_memory)) -> QueryController:
+    """Inject chat memory into QueryController"""
+    return QueryController(memory_service=memory_service)

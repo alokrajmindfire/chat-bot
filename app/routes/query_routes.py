@@ -16,11 +16,11 @@ async def query_documents(
 ):
     """Query indexed documents"""
     try:
-        result = controller.query_documents(
+        result = await controller.query_documents(
             question=request.question,
             top_k=request.top_k,
             collection_name=request.collection_name,
-            conversation_id=request.conversation_id,   # ✅ new
+            conversation_id=request.conversation_id,
             use_memory=request.use_memory  
         )
         return result
