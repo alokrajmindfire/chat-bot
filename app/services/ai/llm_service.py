@@ -3,13 +3,13 @@ from langchain_community.tools import DuckDuckGoSearchResults
 from langchain_classic.agents import AgentExecutor, create_react_agent
 from langsmith import Client
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_community.tools import Tool
 from langchain.tools import tool
 from app.core.config import get_settings
 from app.services.tools.weather_tool import WeatherTool
 from app.core.exceptions import LLMError
 from app.services.tools.news_tool import NewsTool
 import ddgs
+from langchain_community.tools import Tool
 from app.config.logger import logger
 class LLMService:
     """LLMService manages all interactions with the underlying Large Language Model (Gemini)

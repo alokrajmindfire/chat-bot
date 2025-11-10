@@ -32,15 +32,15 @@ class QueryController:
             collection_name=collection_name
         )
 
-        if not docs:
-            return QueryResponse(
-                question=question,
-                answer="No relevant documents found. Please upload a PDF first.",
-                sources=[],
-                model_used=self.settings.GEMINI_MODEL,
-            )
+        # if not docs:
+        #     return QueryResponse(
+        #         question=question,
+        #         answer="No relevant documents found. Please upload a PDF first.",
+        #         sources=[],
+        #         model_used=self.settings.GEMINI_MODEL,
+        #     )
 
-        context = "\n\n".join([doc.page_content for doc in docs])[:3000]
+        context = "\n\n".join([doc.page_content[:1000] for doc in docs])[:2000]
 
         conv_history = None
         if use_memory and conversation_id and self.memory:
@@ -49,7 +49,7 @@ class QueryController:
         result = self.llm_service.generate_answer(
             context=context,
             question=question,
-            conversation_history=conv_history,
+            conversation_history=conv_history[-6:],
         )
         answer = result["output"]
         used_tool = result["used_tool"]

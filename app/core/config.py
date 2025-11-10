@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     OPENWEATHER_API_KEY: str
     LANGSMITH_API_KEY: str
     RAPIDAPI_KEY: str
-    GEMINI_MODEL: str = "gemini-2.0-flash-exp"
+    GEMINI_MODEL: str = "gemini-2.5-flash-lite"
     EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"
     
     CHROMA_PERSIST_DIR: str = "./data/chroma_db"
