@@ -6,7 +6,7 @@ from app.routes.dependencies import get_query_controller
 from app.models.request_models import QuestionRequest
 from app.models.response_models import QueryResponse
 from app.core.exceptions import RAGException
-
+from app.config.logger import logger
 router = APIRouter(prefix="/query", tags=["query"])
 
 @router.post("/", response_model=QueryResponse)
@@ -23,9 +23,12 @@ async def query_documents(
             conversation_id=request.conversation_id,
             use_memory=request.use_memory  
         )
+        logger.info(f"Query executed successfully for: '{request.question}'")
         return result
     
     except RAGException as e:
+        logger.warning(f"RAGException during query '{request.question}': {e}")
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
+        logger.exception(f"Unexpected error during query '{request.question}': {e}")
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
