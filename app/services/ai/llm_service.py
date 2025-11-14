@@ -4,9 +4,9 @@ from langchain_classic.agents import AgentExecutor, create_react_agent
 from langsmith import Client
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.tools import tool
-from app.core.config import get_settings
+from app.config.config import get_settings
 from app.services.tools.weather_tool import WeatherTool
-from app.core.exceptions import LLMError
+from app.config.exceptions import LLMError
 from app.services.tools.news_tool import NewsTool
 import ddgs
 from langchain_community.tools import Tool
@@ -22,7 +22,7 @@ class LLMService:
 
             self.llm = ChatGoogleGenerativeAI(
                 model=settings.GEMINI_MODEL,
-                google_api_key=settings.GEMINI_API_KEY,
+                google_api_key=settings.LLM_API_KEY,
                 temperature=0.7,
             )
 

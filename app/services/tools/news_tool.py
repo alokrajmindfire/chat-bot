@@ -1,6 +1,6 @@
 import http.client
 import json
-from app.core.config import get_settings
+from app.config.config import get_settings
 from app.config.logger import logger
 
 class NewsTool:

@@ -5,7 +5,7 @@ from app.controllers.query_controller import QueryController
 from app.routes.dependencies import get_query_controller
 from app.models.request_models import QuestionRequest
 from app.models.response_models import QueryResponse
-from app.core.exceptions import RAGException
+from app.config.exceptions import RAGException
 from app.config.logger import logger
 router = APIRouter(prefix="/query", tags=["query"])
 
