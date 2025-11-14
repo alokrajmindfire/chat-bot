@@ -3,7 +3,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routes import document_routes, query_routes
-from app.core.config import get_settings
+from app.config.config import get_settings
 from app.models.response_models import HealthResponse
 from app.services.vector_store_service import VectorStoreService
 
@@ -28,6 +28,7 @@ app.add_middleware(
 
 app.include_router(document_routes.router)
 app.include_router(query_routes.router)
+print("DEBUG GEMINI KEY =", get_settings().LLM_API_KEY)
 
 @app.get("/", tags=["root"])
 async def root():

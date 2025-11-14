@@ -34,7 +34,7 @@ package-mode = false
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 [tool.poe.tasks]
-dev = "uvicorn app.main:app"
+dev = "uvicorn app.main:app --reload"
 frontend = "streamlit run frontend/main.py"
 test = "poetry run python -m unittest discover -s app/tests -p '*.py'"
 

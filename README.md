@@ -27,7 +27,7 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 4. **Add api key:**
 
 ```bash
- $env:GEMINI_API_KEY="******" 
+ $env:LLM_API_KEY="******" 
 ```
 
 5. **Run the app:**

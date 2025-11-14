@@ -5,7 +5,7 @@ import os
 from typing import List
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_core.documents import Document
-from app.core.exceptions import DocumentProcessingError
+from app.config.exceptions import DocumentProcessingError
 from app.config.logger import logger
 
 class PDFService:

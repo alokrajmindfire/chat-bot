@@ -5,7 +5,7 @@ from typing import Optional
 from app.services.vector_store_service import VectorStoreService
 from app.services.ai.llm_service import LLMService
 from app.models.response_models import QueryResponse, SourceDocument
-from app.core.config import get_settings
+from app.config.config import get_settings
 from app.services.chat_memory_service import BaseChatMemory
 class QueryController:
     def __init__(self, memory_service: Optional[BaseChatMemory] = None):

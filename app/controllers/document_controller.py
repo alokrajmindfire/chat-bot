@@ -4,8 +4,8 @@ from app.services.pdf_service import PDFService
 from app.services.ai.chunking_service import ChunkingService
 from app.services.vector_store_service import VectorStoreService
 from app.models.response_models import UploadResponse
-from app.core.config import get_settings
-from app.core.exceptions import InvalidFileTypeError
+from app.config.config import get_settings
+from app.config.exceptions import InvalidFileTypeError
 
 class DocumentController:
     def __init__(self):

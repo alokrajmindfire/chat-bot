@@ -1,7 +1,7 @@
 """Service for generating embeddings"""
 
 from langchain_community.embeddings import HuggingFaceEmbeddings
-from app.core.config import get_settings
+from app.config.config import get_settings
 
 class EmbeddingsService:
     _instance = None

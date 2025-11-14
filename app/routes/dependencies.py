@@ -3,7 +3,7 @@
 from fastapi import Depends
 from app.controllers.document_controller import DocumentController
 from app.controllers.query_controller import QueryController
-from app.core.config import get_settings
+from app.config.config import get_settings
 from app.services.chat_memory_service import RedisChatMemory, BaseChatMemory
 
 _memory_instance: BaseChatMemory = None

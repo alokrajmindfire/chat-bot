@@ -3,8 +3,8 @@
 from langchain_community.vectorstores import Chroma
 from typing import List, Optional
 from langchain_core.documents import Document
-from app.core.config import get_settings
-from app.core.exceptions import VectorStoreError
+from app.config.config import get_settings
+from app.config.exceptions import VectorStoreError
 from app.services.ai.embeddings_service import EmbeddingsService
 from app.config.logger import logger
 

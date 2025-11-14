@@ -2,7 +2,7 @@ from fastapi import APIRouter, File, UploadFile, HTTPException, Depends
 from app.controllers.document_controller import DocumentController
 from app.routes.dependencies import get_document_controller
 from app.models.response_models import UploadResponse
-from app.core.exceptions import RAGException
+from app.config.exceptions import RAGException
 from app.config.logger import logger 
 router = APIRouter(prefix="/documents", tags=["documents"])
 
